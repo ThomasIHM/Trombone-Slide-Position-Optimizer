@@ -15,8 +15,12 @@ def load_trombone_data(file_path, horn_type):
     # Logic: Absolute Physical Distance = Position + Stretch + Tuning
     df['Phys_Dist'] = df['Position'] + df['Physical_Offset'] + df['Partial_Offset']
     
-    # Map the UI dropdown to your specific CSV column names
-    basic_col = f"Basic_{horn_type.replace(' ', '_')}"
+    # FIX 1: Explicitly map the UI dropdown to your new CSV columns
+    col_map = {
+        "Straight Tenor": "Basic_Straight", 
+        "Symphony Tenor": "Basic_Symphony"
+    }
+    basic_col = col_map.get(horn_type, "Basic_Straight")
     
     note_map = {}
     basic_map = {}
@@ -168,7 +172,7 @@ st.sidebar.header("Tuning Parameters")
 valve_p = st.sidebar.slider("Valve Change Penalty", 0.0, 5.0, 0.75, 0.25)
 trigger_p = st.sidebar.slider("Trigger Usage Penalty", 0.0, 5.0, 1.0, 0.25)
 leap_p = st.sidebar.slider("Big Leap Penalty (>3.5)", 0.0, 10.0, 3.0, 0.5)
-alt_p = st.sidebar.slider("Alternate Position Penalty", 0.0, 5.0, 1.0, 0.25) # <--- New Slider
+alt_p = st.sidebar.slider("Alternate Position Penalty", 0.0, 5.0, 1.0, 0.25) 
 show_comparison = st.sidebar.toggle("Compare with Basic Positions", value=False)
 
 # Main App
@@ -203,7 +207,7 @@ if st.button("Optimize Route"):
                     
                 midi_sequence.append(note.Note(clean_note).pitch.midi)
             
-            # --- FIX: CALLING THE SOLVER AND STORING TO 'RESULTS' ---
+            # --- RUN THE SOLVER ---
             results = solve_with_leap_logic(
                 midi_sequence, 
                 forced_flags, 
@@ -212,7 +216,7 @@ if st.button("Optimize Route"):
                 valve_p, 
                 leap_p, 
                 trigger_p,
-                alt_p  # <--- Pass the new slider value into the math engine
+                alt_p  
             )
             
             if results:
@@ -234,7 +238,8 @@ if st.button("Optimize Route"):
                     if show_comparison and len(basic_dists) == len(opt_dists):
                         for i, d in enumerate(basic_dists): chart_list.append({'Note Index': i, 'Distance': d, 'Path': 'Basic'})
                     elif show_comparison:
-                        st.warning("Could not plot Basic Path: One or more notes in this sequence doesn't have an 'Is_Basic=1' assigned in your CSV.")
+                        # FIX 2: Updated warning message to reflect the dynamic column mapping
+                        st.warning(f"Could not plot Basic Path: One or more notes in this sequence doesn't have a basic position assigned for the {horn_choice} in your CSV.")
                     
                     chart_df = pd.DataFrame(chart_list)
 
