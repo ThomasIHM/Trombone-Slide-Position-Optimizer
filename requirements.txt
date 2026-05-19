@@ -2,3 +2,4 @@ streamlit
 pandas
 pulp
 altair
+music21
